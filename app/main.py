@@ -120,6 +120,7 @@ def recompute_menu_score(menu_id: int, db: Session = Depends(get_db)):
 @app.post("/recommendations", response_model=schemas.RecommendationResponse)
 def get_recommendations(payload: schemas.RecommendationQuery, db: Session = Depends(get_db)):
     low_sodium_only = payload.low_sodium_only
+    disliked_ingredients: list[str] = []
 
     if payload.user_key:
         pref = (
@@ -127,8 +128,14 @@ def get_recommendations(payload: schemas.RecommendationQuery, db: Session = Depe
             .filter(models.UserPreference.user_key == payload.user_key)
             .one_or_none()
         )
-        if pref and pref.sodium_sensitivity:
-            low_sodium_only = True
+        if pref:
+            if pref.sodium_sensitivity:
+                low_sodium_only = True
+            disliked_ingredients = [
+                ingredient.strip().lower()
+                for ingredient in (pref.disliked_ingredients or [])
+                if ingredient and ingredient.strip()
+            ]
 
     query = (
         db.query(models.Menu, models.Restaurant, models.MenuTasteScore)
@@ -147,6 +154,10 @@ def get_recommendations(payload: schemas.RecommendationQuery, db: Session = Depe
     rows = query.order_by(models.MenuTasteScore.review_count.desc()).limit(30).all()
     items = []
     for menu, restaurant, score in rows:
+        haystack = f"{menu.name} {menu.description or ''}".lower()
+        if disliked_ingredients and any(ingredient in haystack for ingredient in disliked_ingredients):
+            continue
+
         items.append(
             schemas.RecommendationItem(
                 restaurant_id=restaurant.id,
