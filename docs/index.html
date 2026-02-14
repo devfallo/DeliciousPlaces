@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DeliciousPlaces</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: "Inter", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        background: linear-gradient(135deg, #fff4ed, #ffe4e6);
+        color: #1f2937;
+      }
+      main {
+        width: min(680px, 92vw);
+        background: rgba(255, 255, 255, 0.94);
+        border-radius: 20px;
+        padding: 2.5rem;
+        box-shadow: 0 18px 40px rgba(31, 41, 55, 0.12);
+      }
+      h1 {
+        margin-top: 0;
+        font-size: clamp(1.8rem, 4vw, 2.4rem);
+      }
+      p {
+        line-height: 1.65;
+        margin-bottom: 1rem;
+      }
+      ul {
+        margin: 1rem 0 1.4rem;
+        padding-left: 1.1rem;
+      }
+      .badge {
+        display: inline-block;
+        background: #dc2626;
+        color: white;
+        border-radius: 999px;
+        padding: 0.35rem 0.8rem;
+        font-size: 0.85rem;
+        margin-bottom: 0.8rem;
+      }
+      .link {
+        color: #b91c1c;
+        font-weight: 700;
+        text-decoration: none;
+      }
+      .link:hover {
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <span class="badge">GitHub Pages</span>
+      <h1>DeliciousPlaces</h1>
+      <p>
+        초개인화 미각 취향 기반 맛집/메뉴 추천 플랫폼 MVP 백엔드 프로젝트입니다.
+      </p>
+      <ul>
+        <li>FastAPI 기반 REST API</li>
+        <li>미각 점수 온톨로지/휴리스틱 분석</li>
+        <li>메뉴 단위 개인화 추천</li>
+      </ul>
+      <p>
+        API를 로컬에서 실행하려면 저장소 루트에서
+        <code>uvicorn app.main:app --reload</code> 명령어를 실행하세요.
+      </p>
+      <p>
+        프로젝트 저장소: <a class="link" href="." aria-label="repository">DeliciousPlaces</a>
+      </p>
+    </main>
+  </body>
+</html>
