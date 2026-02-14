@@ -31,3 +31,49 @@
 
 ---
 실제 웹페이지 주소: http://127.0.0.1:8000/docs
+
+
+## 5) GitHub Pages 에러 해결 가이드 (사용자 설정 필요)
+`actions/configure-pages@v5` 단계에서 아래 에러가 발생하는 핵심 원인은,
+워크플로우 토큰(`GITHUB_TOKEN`)이 **Pages 사이트를 새로 생성/활성화할 권한이 없기 때문**입니다.
+
+- `Get Pages site failed. Error: Not Found`
+- `Create Pages site failed. Error: Resource not accessible by integration`
+
+즉, 워크플로우가 Pages를 자동 생성하려고 시도하면 실패할 수 있으므로,
+저장소에서 Pages를 먼저 수동으로 활성화하고 워크플로우는 배포만 하도록 설정해야 합니다.
+
+### A. 저장소(Settings)에서 먼저 해야 할 설정
+1. GitHub 저장소 → **Settings** → **Pages** 이동
+2. **Build and deployment** 섹션에서
+   - **Source**: `GitHub Actions` 선택
+3. 저장(또는 자동 반영) 후 페이지가 활성화되었는지 확인
+
+> 조직(Organization) 저장소라면, 조직 정책에서 Pages 사용이 허용되어 있어야 합니다.
+
+### B. Actions 권한 설정 확인
+1. 저장소 → **Settings** → **Actions** → **General**
+2. **Workflow permissions** 를 `Read and write permissions` 로 설정
+   - 최소한 Pages 배포에 필요한 write 권한이 있어야 합니다.
+3. 필요 시 `Allow GitHub Actions to create and approve pull requests` 옵션은 PR 자동화가 필요할 때만 활성화
+
+### C. 왜 워크플로우를 수정했는지
+기존에는 `configure-pages` 단계에 `enablement: true`가 있어
+Pages 사이트 생성 API를 호출하려고 했고, 이때 권한 부족으로 실패했습니다.
+
+이 옵션을 제거해서,
+- Pages **활성화는 저장소 설정에서 수동 1회**
+- Actions는 이후 **배포만 수행**
+하도록 분리했습니다.
+
+### D. 설정 후 검증 방법
+1. `main` 브랜치에 커밋 푸시
+2. Actions 탭에서 `Deploy GitHub Pages` 워크플로우 실행 확인
+3. `Deploy to GitHub Pages` 단계가 성공하면
+4. 저장소의 `https://<owner>.github.io/<repo>/` 주소 접속 확인
+
+### E. 계속 실패할 때 체크리스트
+- 저장소가 포크라면, 포크 권한 정책으로 Pages 관련 토큰 권한이 제한될 수 있음
+- Organization의 Actions/Pages 정책에서 해당 저장소가 차단되어 있지 않은지 확인
+- 브랜치 보호/환경 보호 규칙으로 `github-pages` 환경 배포가 보류되지 않는지 확인
+- 최초 활성화 직후에는 반영까지 수 분 소요될 수 있음
