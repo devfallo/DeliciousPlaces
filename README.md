@@ -21,3 +21,14 @@ uvicorn app.main:app --reload
 ```bash
 pytest -q
 ```
+
+## GitHub Pages 배포
+이 저장소는 `docs/` 폴더를 GitHub Pages로 자동 배포하도록 워크플로를 포함합니다.
+
+1. GitHub 저장소 기본 브랜치가 `main`인지 확인
+2. 저장소 **Settings → Pages → Source**에서 **GitHub Actions** 선택
+3. `main` 브랜치에 푸시하면 `Deploy GitHub Pages` 워크플로가 자동 실행
+
+배포 URL 형식:
+- 개인 계정 저장소: `https://<github-username>.github.io/DeliciousPlaces/`
+- 조직 저장소: `https://<org-name>.github.io/DeliciousPlaces/`
