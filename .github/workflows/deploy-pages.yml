@@ -7,8 +7,8 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
+  pages: write      # Required to build and publish the GitHub Pages site
+  id-token: write   # Required for OIDC authentication during deployment
 
 concurrency:
   group: pages
