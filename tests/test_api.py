@@ -69,3 +69,53 @@ def test_recommendation_flow():
     items = rec_res.json()["items"]
     assert len(items) == 1
     assert items[0]["menu_name"] == "육개장"
+
+
+def test_recommendation_excludes_disliked_ingredients():
+    reset_db()
+
+    create_res = client.post(
+        "/restaurants",
+        json={
+            "name": "홍대 한식집",
+            "source_type": "Hybrid",
+            "latitude": 37.5572,
+            "longitude": 126.9245,
+            "is_low_sodium_certified": True,
+            "menus": [
+                {"name": "고수 쌀국수", "price": 9000, "description": "신선한 고수가 올라간 쌀국수"},
+                {"name": "된장찌개", "price": 8500, "description": "구수한 국물"},
+            ],
+        },
+    )
+    assert create_res.status_code == 200
+
+    menus = create_res.json()["menus"]
+    for menu in menus:
+        client.post(
+            f"/menus/{menu['id']}/signals",
+            json={"source_type": "general", "text": "적당히 맵고 담백함"},
+        )
+        recompute_res = client.post(f"/menus/{menu['id']}/recompute-score")
+        assert recompute_res.status_code == 200
+
+    pref_res = client.post(
+        "/users/preferences",
+        json={
+            "user_key": "u-dislike",
+            "spicy_tolerance": 3,
+            "sodium_sensitivity": False,
+            "disliked_ingredients": ["고수"],
+        },
+    )
+    assert pref_res.status_code == 200
+
+    rec_res = client.post(
+        "/recommendations",
+        json={"user_key": "u-dislike", "min_spiciness": 1.0, "max_spiciness": 5.0},
+    )
+    assert rec_res.status_code == 200
+
+    menu_names = [item["menu_name"] for item in rec_res.json()["items"]]
+    assert "고수 쌀국수" not in menu_names
+    assert "된장찌개" in menu_names
