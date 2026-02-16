@@ -119,3 +119,11 @@ def test_recommendation_excludes_disliked_ingredients():
     menu_names = [item["menu_name"] for item in rec_res.json()["items"]]
     assert "고수 쌀국수" not in menu_names
     assert "된장찌개" in menu_names
+
+
+def test_root_serves_landing_page():
+    res = client.get("/")
+
+    assert res.status_code == 200
+    assert "text/html" in res.headers["content-type"]
+    assert "DeliciousPlaces" in res.text
