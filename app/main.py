@@ -1,6 +1,8 @@
 from datetime import datetime
+from pathlib import Path
 
 from fastapi import Depends, FastAPI, HTTPException
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session, joinedload
 
 from app.database import Base, engine, get_db
@@ -10,6 +12,12 @@ from app.taste_engine import aggregate_menu_scores
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="DeliciousPlaces API", version="0.1.0")
+LANDING_PAGE_PATH = Path(__file__).resolve().parent.parent / "docs" / "index.html"
+
+
+@app.get("/", include_in_schema=False)
+def landing_page() -> FileResponse:
+    return FileResponse(LANDING_PAGE_PATH)
 
 
 @app.get("/health")
