@@ -127,3 +127,54 @@ def test_root_serves_landing_page():
     assert res.status_code == 200
     assert "text/html" in res.headers["content-type"]
     assert "DeliciousPlaces" in res.text
+
+
+def test_dish_insights_keyword_analysis():
+    reset_db()
+
+    res_a = client.post(
+        "/restaurants",
+        json={
+            "name": "A식당",
+            "source_type": "Hybrid",
+            "latitude": 37.5,
+            "longitude": 127.0,
+            "menus": [{"name": "김치찌개", "price": 9000}],
+        },
+    )
+    res_b = client.post(
+        "/restaurants",
+        json={
+            "name": "B식당",
+            "source_type": "Hybrid",
+            "latitude": 37.51,
+            "longitude": 127.01,
+            "menus": [{"name": "김치찌개", "price": 8500}],
+        },
+    )
+
+    menu_a = res_a.json()["menus"][0]["id"]
+    menu_b = res_b.json()["menus"][0]["id"]
+
+    client.post(
+        f"/menus/{menu_a}/signals",
+        json={"source_type": "map_app", "source_platform": "google_maps", "text": "돼지고기 국물이 끝내주고 매콤해요"},
+    )
+    client.post(
+        f"/menus/{menu_b}/signals",
+        json={"source_type": "delivery_app", "source_platform": "baemin", "text": "참치가 들어가고 조금 짜요"},
+    )
+
+    client.post(f"/menus/{menu_a}/recompute-score")
+    client.post(f"/menus/{menu_b}/recompute-score")
+
+    insight_res = client.get("/insights/dishes/김치찌개")
+    assert insight_res.status_code == 200
+
+    items = insight_res.json()["items"]
+    assert len(items) == 2
+
+    by_restaurant = {item["restaurant_name"]: item for item in items}
+    assert "돼지고기" in by_restaurant["A식당"]["top_keywords"]
+    assert "매운맛" in by_restaurant["A식당"]["top_keywords"]
+    assert "참치" in by_restaurant["B식당"]["top_keywords"]

@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.database import Base, engine, get_db
 from app import models, schemas
-from app.taste_engine import aggregate_menu_scores
+from app.taste_engine import aggregate_menu_scores, build_menu_summary, extract_keywords
 
 Base.metadata.create_all(bind=engine)
 
@@ -17,6 +17,13 @@ LANDING_PAGE_PATH = Path(__file__).resolve().parent.parent / "docs" / "index.htm
 
 @app.get("/", include_in_schema=False)
 def landing_page() -> FileResponse:
+    return FileResponse(LANDING_PAGE_PATH)
+
+
+
+
+@app.get("/docs", include_in_schema=False)
+def docs_landing_page() -> FileResponse:
     return FileResponse(LANDING_PAGE_PATH)
 
 
@@ -88,6 +95,7 @@ def add_review_signal(menu_id: int, payload: schemas.ReviewSignalCreate, db: Ses
     signal = models.ReviewSignal(
         menu_id=menu_id,
         source_type=payload.source_type,
+        source_platform=payload.source_platform,
         text=payload.text,
         created_at=payload.created_at or datetime.utcnow(),
     )
@@ -181,3 +189,42 @@ def get_recommendations(payload: schemas.RecommendationQuery, db: Session = Depe
         )
 
     return schemas.RecommendationResponse(items=items)
+
+
+@app.get("/insights/dishes/{dish_name}", response_model=schemas.DishInsightResponse)
+def get_dish_insights(dish_name: str, db: Session = Depends(get_db)):
+    keyword = dish_name.strip()
+    if not keyword:
+        raise HTTPException(status_code=400, detail="dish_name is required")
+
+    rows = (
+        db.query(models.Menu, models.Restaurant, models.MenuTasteScore)
+        .join(models.Restaurant, models.Menu.restaurant_id == models.Restaurant.id)
+        .join(models.MenuTasteScore, models.MenuTasteScore.menu_id == models.Menu.id)
+        .filter(models.Menu.name.contains(keyword))
+        .order_by(models.MenuTasteScore.review_count.desc())
+        .limit(30)
+        .all()
+    )
+
+    items = []
+    for menu, restaurant, score in rows:
+        signals = db.query(models.ReviewSignal).filter(models.ReviewSignal.menu_id == menu.id).all()
+        top_keywords = extract_keywords([signal.text for signal in signals], top_n=3)
+
+        items.append(
+            schemas.DishInsightItem(
+                restaurant_id=restaurant.id,
+                restaurant_name=restaurant.name,
+                menu_id=menu.id,
+                menu_name=menu.name,
+                review_count=score.review_count,
+                spiciness_level=score.spiciness_level,
+                saltiness_level=score.saltiness_level,
+                sweetness_level=score.sweetness_level,
+                top_keywords=top_keywords,
+                summary=build_menu_summary(menu.name, top_keywords, score.review_count),
+            )
+        )
+
+    return schemas.DishInsightResponse(dish_name=keyword, items=items)

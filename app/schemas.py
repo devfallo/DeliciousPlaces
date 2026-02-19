@@ -77,7 +77,8 @@ class UserPreferenceRead(UserPreferenceUpsert):
 
 
 class ReviewSignalCreate(BaseModel):
-    source_type: str = Field(pattern="^(tv|receipt_verified|blog|general)$")
+    source_type: str = Field(pattern="^(tv|receipt_verified|blog|general|map_app|delivery_app)$")
+    source_platform: Optional[str] = None
     text: str
     created_at: Optional[datetime] = None
 
@@ -101,3 +102,21 @@ class RecommendationItem(BaseModel):
 
 class RecommendationResponse(BaseModel):
     items: List[RecommendationItem]
+
+
+class DishInsightItem(BaseModel):
+    restaurant_id: int
+    restaurant_name: str
+    menu_id: int
+    menu_name: str
+    review_count: int
+    spiciness_level: float
+    saltiness_level: float
+    sweetness_level: float
+    top_keywords: List[str]
+    summary: str
+
+
+class DishInsightResponse(BaseModel):
+    dish_name: str
+    items: List[DishInsightItem]

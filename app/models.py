@@ -67,6 +67,7 @@ class ReviewSignal(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     menu_id = Column(Integer, ForeignKey("menus.id"), nullable=False, index=True)
-    source_type = Column(String(30), nullable=False)  # tv, receipt_verified, blog, general
+    source_type = Column(String(30), nullable=False)  # tv, receipt_verified, blog, general, map_app, delivery_app
+    source_platform = Column(String(50), nullable=True)
     text = Column(Text, nullable=False)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)

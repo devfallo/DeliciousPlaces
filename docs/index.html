@@ -3,77 +3,128 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>DeliciousPlaces</title>
+    <title>DeliciousPlaces 인사이트</title>
     <style>
-      :root {
-        color-scheme: light;
-        font-family: "Inter", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
-      }
-      body {
-        margin: 0;
-        min-height: 100vh;
-        display: grid;
-        place-items: center;
-        background: linear-gradient(135deg, #fff4ed, #ffe4e6);
-        color: #1f2937;
-      }
-      main {
-        width: min(680px, 92vw);
-        background: rgba(255, 255, 255, 0.94);
-        border-radius: 20px;
-        padding: 2.5rem;
-        box-shadow: 0 18px 40px rgba(31, 41, 55, 0.12);
-      }
-      h1 {
-        margin-top: 0;
-        font-size: clamp(1.8rem, 4vw, 2.4rem);
-      }
-      p {
-        line-height: 1.65;
-        margin-bottom: 1rem;
-      }
-      ul {
-        margin: 1rem 0 1.4rem;
-        padding-left: 1.1rem;
-      }
-      .badge {
-        display: inline-block;
-        background: #dc2626;
-        color: white;
-        border-radius: 999px;
-        padding: 0.35rem 0.8rem;
-        font-size: 0.85rem;
-        margin-bottom: 0.8rem;
-      }
-      .link {
-        color: #b91c1c;
-        font-weight: 700;
-        text-decoration: none;
-      }
-      .link:hover {
-        text-decoration: underline;
-      }
+      :root { font-family: "Inter", "Noto Sans KR", sans-serif; color-scheme: light; }
+      body { margin: 0; background: #f8fafc; color:#0f172a; }
+      .wrap { max-width: 960px; margin: 0 auto; padding: 2rem 1rem 3rem; }
+      .hero { background: white; border-radius: 16px; padding: 1.5rem; box-shadow: 0 8px 24px rgba(15,23,42,.08); }
+      h1 { margin: 0 0 .6rem; }
+      .search { margin-top: 1rem; display:flex; gap:.5rem; flex-wrap: wrap; }
+      input, button { font-size: 1rem; padding: .7rem .9rem; border-radius: 10px; border:1px solid #cbd5e1; }
+      input { flex: 1; min-width: 220px; }
+      button { background:#dc2626; color:#fff; border:none; font-weight:700; cursor:pointer; }
+      .cards { margin-top:1rem; display:grid; gap:.8rem; }
+      .card { background:#fff; border-radius:12px; padding:1rem; box-shadow: 0 4px 12px rgba(15,23,42,.06); }
+      .chips { display:flex; flex-wrap:wrap; gap:.4rem; margin:.5rem 0; }
+      .chip { background:#fee2e2; color:#991b1b; padding:.25rem .6rem; border-radius:999px; font-size:.85rem; }
+      .meta { font-size:.92rem; color:#475569; }
+      .hint { color:#64748b; font-size:.92rem; }
+      .warn { color:#92400e; background:#fffbeb; border:1px solid #fcd34d; padding:.7rem .8rem; border-radius:10px; }
     </style>
   </head>
   <body>
-    <main>
-      <span class="badge">GitHub Pages</span>
-      <h1>DeliciousPlaces</h1>
-      <p>
-        초개인화 미각 취향 기반 맛집/메뉴 추천 플랫폼 MVP 백엔드 프로젝트입니다.
-      </p>
-      <ul>
-        <li>FastAPI 기반 REST API</li>
-        <li>미각 점수 온톨로지/휴리스틱 분석</li>
-        <li>메뉴 단위 개인화 추천</li>
-      </ul>
-      <p>
-        API를 로컬에서 실행하려면 저장소 루트에서
-        <code>uvicorn app.main:app --reload</code> 명령어를 실행하세요.
-      </p>
-      <p>
-        프로젝트 저장소: <a class="link" href="." aria-label="repository">DeliciousPlaces</a>
-      </p>
-    </main>
+    <div class="wrap">
+      <section class="hero">
+        <h1>메뉴별 리뷰 인사이트 대시보드</h1>
+        <p>메뉴별 핵심 키워드와 맛 성향(맵기/짠맛/단맛)을 한눈에 확인합니다.</p>
+        <div class="search">
+          <input id="dishInput" placeholder="예: 김치찌개, 떡볶이" value="김치찌개" />
+          <button id="searchBtn">인사이트 조회</button>
+        </div>
+        <p class="hint">백엔드 API가 없으면 예시 데이터로 미리보기가 표시됩니다.</p>
+      </section>
+
+      <section class="cards" id="result"></section>
+    </div>
+
+    <script>
+      const SAMPLE_DATA = {
+        dish_name: "김치찌개",
+        items: [
+          {
+            restaurant_name: "A식당",
+            menu_name: "김치찌개",
+            review_count: 18,
+            spiciness_level: 4.2,
+            saltiness_level: 3.1,
+            sweetness_level: 2.1,
+            top_keywords: ["돼지고기", "매운맛", "국물"],
+            summary: "김치찌개은(는) 돼지고기, 매운맛 중심의 반응이 많았습니다.",
+          },
+          {
+            restaurant_name: "B식당",
+            menu_name: "김치찌개",
+            review_count: 12,
+            spiciness_level: 3.4,
+            saltiness_level: 4.0,
+            sweetness_level: 2.0,
+            top_keywords: ["참치", "짠맛", "국물"],
+            summary: "김치찌개은(는) 참치, 짠맛 중심의 반응이 많았습니다.",
+          },
+        ],
+      };
+
+      const resultEl = document.getElementById("result");
+      const inputEl = document.getElementById("dishInput");
+
+      function getApiBase() {
+        if (window.location.protocol.startsWith("http") && window.location.hostname !== "127.0.0.1" && window.location.hostname !== "localhost") {
+          return null;
+        }
+        return "";
+      }
+
+      function renderCards(data, withWarning = false) {
+        if (!data.items.length) {
+          resultEl.innerHTML = `<div class="card">${data.dish_name} 관련 분석 데이터가 아직 없습니다.</div>`;
+          return;
+        }
+
+        const warning = withWarning
+          ? '<div class="warn">백엔드 API에 연결할 수 없어 예시 데이터로 표시 중입니다. (미리보기/정적 페이지 환경)</div>'
+          : "";
+
+        resultEl.innerHTML = `
+          ${warning}
+          ${data.items
+            .map(
+              (item) => `
+                <article class="card">
+                  <h3>${item.restaurant_name} · ${item.menu_name}</h3>
+                  <div class="meta">리뷰 ${item.review_count}건 · 맵기 ${item.spiciness_level} / 짠맛 ${item.saltiness_level} / 단맛 ${item.sweetness_level}</div>
+                  <div class="chips">${item.top_keywords.map((k) => `<span class="chip">${k}</span>`).join("")}</div>
+                  <p>${item.summary}</p>
+                </article>
+              `,
+            )
+            .join("")}
+        `;
+      }
+
+      async function fetchInsights() {
+        const dish = inputEl.value.trim();
+        if (!dish) return;
+
+        const apiBase = getApiBase();
+        if (apiBase === null) {
+          renderCards({ ...SAMPLE_DATA, dish_name: dish }, true);
+          return;
+        }
+
+        resultEl.innerHTML = '<div class="card">불러오는 중...</div>';
+        try {
+          const res = await fetch(`${apiBase}/insights/dishes/${encodeURIComponent(dish)}`);
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const data = await res.json();
+          renderCards(data, false);
+        } catch (error) {
+          renderCards({ ...SAMPLE_DATA, dish_name: dish }, true);
+        }
+      }
+
+      document.getElementById("searchBtn").addEventListener("click", fetchInsights);
+      fetchInsights();
+    </script>
   </body>
 </html>
