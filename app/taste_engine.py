@@ -95,3 +95,38 @@ def aggregate_menu_scores(signals: Iterable[models.ReviewSignal]) -> tuple[float
         round(sweet_sum / weight_sum, 2),
         len(signals),
     )
+
+
+KEYWORD_TAGS = {
+    "돼지고기": ["돼지고기", "고기", "목살", "삼겹"],
+    "참치": ["참치"],
+    "매운맛": ["맵", "얼큰", "칼칼", "매콤"],
+    "짠맛": ["짭", "짜", "간이 세", "자극적"],
+    "담백함": ["담백", "슴슴", "삼삼"],
+    "국물": ["국물", "육수"],
+    "가성비": ["가성비", "양 많", "푸짐"],
+}
+
+
+def extract_keywords(texts: Iterable[str], top_n: int = 3) -> list[str]:
+    bucket: dict[str, int] = {tag: 0 for tag in KEYWORD_TAGS}
+
+    for text in texts:
+        lowered = text.lower()
+        for tag, tokens in KEYWORD_TAGS.items():
+            if any(token in lowered for token in tokens):
+                bucket[tag] += 1
+
+    ranked = sorted(bucket.items(), key=lambda item: item[1], reverse=True)
+    return [tag for tag, count in ranked if count > 0][:top_n]
+
+
+def build_menu_summary(menu_name: str, keywords: list[str], review_count: int) -> str:
+    if not keywords:
+        return f"{menu_name}은(는) 리뷰 {review_count}건 기준으로 아직 뚜렷한 키워드가 부족합니다."
+
+    if len(keywords) == 1:
+        return f"{menu_name}은(는) {keywords[0]} 키워드가 가장 자주 언급됐습니다."
+
+    first, second = keywords[0], keywords[1]
+    return f"{menu_name}은(는) {first}, {second} 중심의 반응이 많았습니다."
