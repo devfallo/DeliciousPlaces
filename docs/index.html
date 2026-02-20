@@ -32,7 +32,7 @@
           <input id="dishInput" placeholder="예: 김치찌개, 떡볶이" value="김치찌개" />
           <button id="searchBtn">인사이트 조회</button>
         </div>
-        <p class="hint">백엔드 API가 없으면 예시 데이터로 미리보기가 표시됩니다.</p>
+        <p class="hint">백엔드 API 연결 상태에 따라 실데이터 또는 예시 데이터를 표시합니다. 필요 시 <code>?api_base=https://your-api.example.com</code>를 URL에 추가하세요.</p>
       </section>
 
       <section class="cards" id="result"></section>
@@ -69,9 +69,21 @@
       const inputEl = document.getElementById("dishInput");
 
       function getApiBase() {
-        if (window.location.protocol.startsWith("http") && window.location.hostname !== "127.0.0.1" && window.location.hostname !== "localhost") {
-          return null;
+        const fromQuery = new URLSearchParams(window.location.search).get("api_base");
+        if (fromQuery) return fromQuery.replace(/\/$/, "");
+
+        const override = window.DELICIOUS_PLACES_API_BASE || "";
+        if (override) return override.replace(/\/$/, "");
+
+        const host = window.location.hostname;
+        const protocol = window.location.protocol;
+        const isLocal = host === "127.0.0.1" || host === "localhost";
+        if (isLocal) return "";
+
+        if (protocol.startsWith("http")) {
+          return `${protocol}//${host}${window.location.port ? `:${window.location.port}` : ""}`;
         }
+
         return "";
       }
 
@@ -107,11 +119,6 @@
         if (!dish) return;
 
         const apiBase = getApiBase();
-        if (apiBase === null) {
-          renderCards({ ...SAMPLE_DATA, dish_name: dish }, true);
-          return;
-        }
-
         resultEl.innerHTML = '<div class="card">불러오는 중...</div>';
         try {
           const res = await fetch(`${apiBase}/insights/dishes/${encodeURIComponent(dish)}`);

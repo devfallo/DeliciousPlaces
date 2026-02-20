@@ -1,7 +1,9 @@
 from datetime import datetime
+import os
 from pathlib import Path
 
 from fastapi import Depends, FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session, joinedload
 
@@ -13,6 +15,18 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="DeliciousPlaces API", version="0.1.0")
 LANDING_PAGE_PATH = Path(__file__).resolve().parent.parent / "docs" / "index.html"
+
+cors_allow_origins = [
+    origin.strip() for origin in os.getenv("CORS_ALLOW_ORIGINS", "*").split(",") if origin.strip()
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=cors_allow_origins,
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.get("/", include_in_schema=False)
