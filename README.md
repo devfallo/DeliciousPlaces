@@ -32,3 +32,13 @@ pytest -q
 배포 URL 형식:
 - 개인 계정 저장소: `https://<github-username>.github.io/DeliciousPlaces/`
 - 조직 저장소: `https://<org-name>.github.io/DeliciousPlaces/`
+
+### 정적 페이지에서 백엔드 API 연결하기
+GitHub Pages처럼 정적으로 열리는 환경에서는 URL 쿼리로 API 주소를 지정할 수 있습니다.
+
+```
+https://<github-username>.github.io/DeliciousPlaces/?api_base=https://<your-backend-domain>
+```
+
+백엔드에서 CORS 허용이 필요하면 `CORS_ALLOW_ORIGINS` 환경변수로 출처를 설정하세요.
+예: `CORS_ALLOW_ORIGINS=https://<github-username>.github.io`
